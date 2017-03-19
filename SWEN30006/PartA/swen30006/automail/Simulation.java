@@ -83,7 +83,7 @@ public class Simulation {
                 priority_weight = 2;
                 break;
         }
-        System.out.println(Clock.Time() - deliveryItem.getArrivalTime());
+        System.out.println(Clock.Time() - deliveryItem.getArrivalTime()+" "+deliveryItem.getSize());
         return Math.pow(Clock.Time() - deliveryItem.getArrivalTime(),penalty)*priority_weight;
     }
 
