@@ -4,9 +4,6 @@ import exceptions.TubeFullException;
 
 import automail.MailItem;
 import automail.IMailSorter;
-
-import java.util.ArrayList;
-
 import automail.Clock;
 import automail.StorageTube;
 
@@ -16,19 +13,27 @@ import automail.StorageTube;
  * If the MailItem doesn't fit, it will tell the robot to start delivering (return true).
  */
 public class SimpleMailSorter implements IMailSorter{
-
+	private static final int STARTOFQUEUE = 0;
 	BetterMailPool betterMailPool;
-	ArrayList<MailItem> WaitingList = new ArrayList<MailItem>();
+	private int arraypos;
+	private int floornum;
+	private boolean tubefull;
 	
 	public SimpleMailSorter(BetterMailPool betterMailPool) {
 		this.betterMailPool = betterMailPool;
+		arraypos = STARTOFQUEUE;
+		tubefull = false;
 	}
     /**
      * Fills the storage tube
      */
     @Override
     public boolean fillStorageTube(StorageTube tube) {
-    	while(!tube.isFull()&&!betterMailPool.isEmptyPool()){
+
+    	// System.out.println("SimpleMailPool.mailItems.count: "+SimpleMailPool.mailItems.size());
+    	/** Strategy 1: Fill Tube based on the First Item in Queue's floor number.
+    	 */
+    	while(!betterMailPool.isEmptyPool() && !tubefull){
             try{
                 if (!betterMailPool.isEmptyPool()) {
     	            /** Gets the first item from the ArrayList */
@@ -36,7 +41,7 @@ public class SimpleMailSorter implements IMailSorter{
     	            /** Add the item to the tube */
     	            tube.addItem(mailItem);
     	            /** Remove the item from the ArrayList */
-    	            betterMailPool.remove();
+    	            betterMailPool.remove(mailItem);
                 }
             }
             /** Refer to TubeFullException.java --
@@ -44,25 +49,18 @@ public class SimpleMailSorter implements IMailSorter{
              *  structure your code to avoid the need to catch this exception for normal operation
              */
             catch(TubeFullException e){
-            	WaitingList.add(betterMailPool.get());
-            	betterMailPool.remove();
+            	return true;
             }   
     	}
-    	for(MailItem mail:WaitingList){
-    		betterMailPool.addToPool(mail);
-    	}
-        if(Clock.Time() > Clock.LAST_DELIVERY_TIME && betterMailPool.isEmptyPool() && !tube.isEmpty()){
-            return true;
-        }
-        if(tube.isFull()||betterMailPool.isEmptyPool()){
-        	return true;
-        }
-    	return false;
-    	// System.out.println("SimpleMailPool.mailItems.count: "+SimpleMailPool.mailItems.size());
    
         /** 
          * Handles the case where the last delivery time has elapsed and there are no more
          * items to deliver.
          */
+        if(Clock.Time() > Clock.LAST_DELIVERY_TIME && betterMailPool.isEmptyPool() && !tube.isEmpty()){
+            return true;
+        }
+        return false;
+
     }
 }
