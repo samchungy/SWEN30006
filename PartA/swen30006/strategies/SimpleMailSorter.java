@@ -33,7 +33,7 @@ public class SimpleMailSorter implements IMailSorter{
 	            /** Add the item to the tube */
 	            tube.addItem(mailItem);
 	            /** Remove the item from the ArrayList */
-	            betterMailPool.remove();
+	            betterMailPool.remove(mailItem);
             }
         }
         /** Refer to TubeFullException.java --

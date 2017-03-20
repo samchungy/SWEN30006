@@ -37,7 +37,7 @@ public class Simulation {
         generator.generateAllMail();
 
         while(MAIL_DELIVERED.size() != MAIL_TO_CREATE) {
-        	// System.out.println("-- Step: "+Clock.Time());
+        	//System.out.println("-- Step: "+Clock.Time());
             generator.step();
             automail.robot.step();
             Clock.Tick();
