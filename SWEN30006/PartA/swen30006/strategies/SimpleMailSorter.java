@@ -4,6 +4,10 @@ import exceptions.TubeFullException;
 
 import automail.MailItem;
 import automail.IMailSorter;
+
+import java.util.Iterator;
+
+import automail.Building;
 import automail.Clock;
 import automail.StorageTube;
 
@@ -13,16 +17,11 @@ import automail.StorageTube;
  * If the MailItem doesn't fit, it will tell the robot to start delivering (return true).
  */
 public class SimpleMailSorter implements IMailSorter{
-	private static final int STARTOFQUEUE = 0;
-	BetterMailPool betterMailPool;
-	private int arraypos;
-	private int floornum;
-	private boolean tubefull;
+	private final int STARTOFQUEUE = 0;
+	BetterMailPool2 betterMailPool;
 	
-	public SimpleMailSorter(BetterMailPool betterMailPool) {
+	public SimpleMailSorter(BetterMailPool2 betterMailPool) {
 		this.betterMailPool = betterMailPool;
-		arraypos = STARTOFQUEUE;
-		tubefull = false;
 	}
     /**
      * Fills the storage tube
@@ -31,36 +30,49 @@ public class SimpleMailSorter implements IMailSorter{
     public boolean fillStorageTube(StorageTube tube) {
 
     	// System.out.println("SimpleMailPool.mailItems.count: "+SimpleMailPool.mailItems.size());
-    	/** Strategy 1: Fill Tube based on the First Item in Queue's floor number.
-    	 */
-    	while(!betterMailPool.isEmptyPool() && !tubefull){
-            try{
-                if (!betterMailPool.isEmptyPool()) {
-    	            /** Gets the first item from the ArrayList */
-    	            MailItem mailItem = betterMailPool.get();
-    	            /** Add the item to the tube */
-    	            tube.addItem(mailItem);
-    	            /** Remove the item from the ArrayList */
-    	            betterMailPool.remove(mailItem);
-                }
-            }
-            /** Refer to TubeFullException.java --
-             *  Usage below illustrates need to handle this exception. However you should
-             *  structure your code to avoid the need to catch this exception for normal operation
-             */
-            catch(TubeFullException e){
-            	return true;
-            }   
+    	/**Keeps track of Array Iterration*/
+    	int floornum = Building.MAILROOM_LOCATION;
+    	int tubespaceleft = tube.MAXIMUM_CAPACITY;
+    	MailItem prioritymail = null;
+    	if(!betterMailPool.isEmptyPool()){
+    		prioritymail = betterMailPool.get(STARTOFQUEUE);
+        	floornum = prioritymail.getDestFloor();
+        	tubespaceleft -= prioritymail.getSize();
+        	try {
+    			tube.addItem(prioritymail);
+    		} catch (TubeFullException e) {
+    			return true;
+    		}
+        	betterMailPool.remove(prioritymail);
     	}
-   
-        /** 
-         * Handles the case where the last delivery time has elapsed and there are no more
-         * items to deliver.
-         */
+    	
+    	/** Strategy 1: Fill Tube with First Priority Item, Next Fill Tube with High Priority
+    	 * That is on the way to the first parcel's delivery floor. Repeat. If not just send.
+    	 */
+    	for (Iterator<MailItem> iterator = betterMailPool.getI(); iterator.hasNext() && tubespaceleft > 0; ){
+    		prioritymail = iterator.next();
+    		if(Math.abs(floornum-prioritymail.getDestFloor())<=Math.abs(floornum-Building.MAILROOM_LOCATION)
+    				&& tubespaceleft-prioritymail.getSize() >= 0){
+    			floornum = prioritymail.getDestFloor();
+    			tubespaceleft -= prioritymail.getSize();
+    	    	try {
+    				tube.addItem(prioritymail);
+    			} catch (TubeFullException e) {
+    				return true;
+    			}
+    			iterator.remove();
+    		}
+    	}
         if(Clock.Time() > Clock.LAST_DELIVERY_TIME && betterMailPool.isEmptyPool() && !tube.isEmpty()){
             return true;
         }
-        return false;
+        if (tubespaceleft == tube.MAXIMUM_CAPACITY){
+        	return false;
+        }
+        else {
+        	return true;
+        }
+    	
 
     }
 }

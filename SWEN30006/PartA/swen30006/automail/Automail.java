@@ -12,7 +12,7 @@ public class Automail {
     /** CHANGE NOTHING ABOVE HERE */
     	
     	/** Initialize the MailPool */
-    	BetterMailPool betterMailPool = new BetterMailPool();
+    	BetterMailPool2 betterMailPool = new BetterMailPool2();
     	mailPool = betterMailPool;
     	
         /** Initialize the MailSorter */
